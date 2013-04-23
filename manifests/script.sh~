@@ -1,0 +1,18 @@
+echo "resource pg {" >> /etc/drbd.d/pg.res
+echo "  device minor 0;" >> /etc/drbd.d/pg.res
+echo "  disk /dev/sdb;" >> /etc/drbd.d/pg.res
+
+echo "  syncer {" >> /etc/drbd.d/pg.res
+echo "    rate 150M;" >> /etc/drbd.d/pg.res
+echo "    verify-alg md5" >> /etc/drbd.d/pg.res
+echo "  }" >> /etc/drbd.d/pg.res
+
+echo "  on node1 {" >> /etc/drbd.d/pg.res
+echo "    address 10.1.1.31:7788;" >> /etc/drbd.d/pg.res
+echo "    meta-disk internal;" >> /etc/drbd.d/pg.res
+echo "  }" >> /etc/drbd.d/pg.res
+echo "  on node2 {" >> /etc/drbd.d/pg.res
+echo "    address 10.1.1.32:7788;" >> /etc/drbd.d/pg.res
+echo "    meta-disk internal;" >> /etc/drbd.d/pg.res
+echo "  }" >> /etc/drbd.d/pg.res
+echo "}" >> /etc/drbd.d/pg.res
