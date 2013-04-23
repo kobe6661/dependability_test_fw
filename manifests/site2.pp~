@@ -75,12 +75,6 @@ exec { "hosts-update3":
 
 Exec["hosts-update1"] -> Exec["hosts-update2"] -> Exec["hosts-update3"]
 
-exec { "/home/vagrant/script.sh":
-		cwd     	=> "/home/vagrant/",
-		group		=> "vagrant",
-		user		=> "vagrant",
-		logoutput	=> on_failure,
-		timeout		=> 0, # stack.sh takes time!
-	}
+
 
 }

@@ -98,6 +98,9 @@ then
  sudo cat /vagrant/.ssh/id_rsa1.pub >> ~root/.ssh/authorized_keys
  sudo cat /vagrant/.ssh/id_rsa2.pub >> ~root/.ssh/authorized_keys
 fi
+# Add node2 to list of known hosts
+sudo ssh-keyscan -t rsa 10.1.1.31 >> ~/.ssh/known_hosts
+sudo ssh-keyscan -t rsa 10.1.1.32 >> ~/.ssh/known_hosts
 elif [[ $node = "node2" ]]; then
 # Boot into node2 and authorize public keys
 if [ ! -d "~root/.ssh" ];
@@ -110,10 +113,10 @@ then
  sudo cat /vagrant/.ssh/id_rsa2.pub >> ~root/.ssh/authorized_keys
 fi
 # Add node1 to list of known hosts
-sudo ssh-keyscan -t rsa 10.1.1.31 >> ~root/.ssh/known_hosts
-sudo ssh-keyscan -t rsa 10.1.1.32 >> ~root/.ssh/known_hosts
+sudo ssh-keyscan -t rsa 10.1.1.31 >> ~/.ssh/known_hosts
+sudo ssh-keyscan -t rsa 10.1.1.32 >> ~/.ssh/known_hosts
 # SSH into node1 and authorize public keys
-vagrant | ssh node1
+sshpass -p "vagrant" ssh vagrant@node1
 if [ ! -d "~root/.ssh" ];
 then
   sudo mkdir ~root/.ssh
@@ -124,8 +127,8 @@ then
  sudo cat /vagrant/.ssh/id_rsa2.pub >> ~root/.ssh/authorized_keys
 fi
 # Add node2 to list of known hosts
-sudo ssh-keyscan -t rsa 10.1.1.31 >> ~root/.ssh/known_hosts
-sudo ssh-keyscan -t rsa 10.1.1.32 >> ~root/.ssh/known_hosts
+sudo ssh-keyscan -t rsa 10.1.1.31 >> ~/.ssh/known_hosts
+sudo ssh-keyscan -t rsa 10.1.1.32 >> ~/.ssh/known_hosts
 else
  echo "nothing"
 fi
