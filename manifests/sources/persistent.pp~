@@ -15,7 +15,7 @@ l
 
 w
 EOF",
-    unless => "/bin/grep sdb5 /proc/partitions",
+    unless => "/bin/grep sdb1 /proc/partitions",
   }
 
  # exec { "mkfs-sourcehd":

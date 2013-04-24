@@ -35,6 +35,17 @@ Exec["apt-update"] -> Package <| |>
 		ensure 		=> 'present',
 	}
 
+        #ensure postgresql is installed
+	package { 'postgresql':
+		ensure 		=> 'present',
+	}
+	package { 'postgresql-9.1':
+		ensure 		=> 'present',
+	}
+	package { 'postgresql-contrib-9.1':
+		ensure 		=> 'present',
+	}
+
         #ensure apache2 is installed
 	package { 'apache2':
 		ensure 		=> 'present',

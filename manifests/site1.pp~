@@ -25,8 +25,24 @@ Exec["apt-update"] -> Package <| |>
 		ensure 		=> 'present',
 	}
 
+        #ensure sshpass is installed
+	package { 'sshpass':
+		ensure 		=> 'present',
+	}
+
 	#ensure drbd8-utils is installed
 	package { 'drbd8-utils':
+		ensure 		=> 'present',
+	}
+
+        #ensure postgresql is installed
+	package { 'postgresql':
+		ensure 		=> 'present',
+	}
+	package { 'postgresql-9.1':
+		ensure 		=> 'present',
+	}
+	package { 'postgresql-contrib-9.1':
 		ensure 		=> 'present',
 	}
 

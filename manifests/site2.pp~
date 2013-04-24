@@ -25,6 +25,11 @@ Exec["apt-update"] -> Package <| |>
 		ensure 		=> 'present',
 	}
 
+        #ensure sshpass is installed
+	package { 'sshpass':
+		ensure 		=> 'present',
+	}
+
 	#ensure drbd8-utils is installed
 	package { 'drbd8-utils':
 		ensure 		=> 'present',
