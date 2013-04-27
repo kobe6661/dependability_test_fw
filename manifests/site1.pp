@@ -46,6 +46,11 @@ Exec["apt-update"] -> Package <| |>
 		ensure 		=> 'present',
 	}
 
+	#ensure mysql is installed
+	package { 'mysql-server':
+		ensure 		=> 'present',
+	}
+
         #ensure apache2 is installed
 	package { 'apache2':
 		ensure 		=> 'present',
@@ -77,7 +82,7 @@ Exec["apt-update"] -> Package <| |>
 	}
 
 exec { "hosts-update1":
-    command => "/bin/echo '192.168.1.11    node1 node1 precise64' >> /etc/hosts"
+    command => "/bin/echo '192.168.22.11    node1 node1 precise64' >> /etc/hosts"
 }
 
 exec { "hosts-update2":

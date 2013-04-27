@@ -12,7 +12,7 @@ Vagrant::Config.run do |config|
     
     # Two Interfaces: one for host machine access, 
     # One for dedicated replication connection
-    n1_config.vm.network :hostonly, "192.168.1.11"
+    n1_config.vm.network :hostonly, "192.168.22.11"
     n1_config.vm.network :hostonly, "10.1.1.31"
     n1_config.vm.forward_port 80, 8080
     
@@ -45,7 +45,7 @@ Vagrant::Config.run do |config|
     
     # Two Interfaces: one for host machine access, 
     # One for dedicated replication connection
-    n2_config.vm.network :hostonly, "192.168.1.12"
+    n2_config.vm.network :hostonly, "192.168.22.12"
     n2_config.vm.network :hostonly, "10.1.1.32"
     n2_config.vm.forward_port 80, 8088
     

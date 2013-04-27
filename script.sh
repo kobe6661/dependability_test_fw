@@ -155,15 +155,109 @@ EOF
 actual=$(hostname)
 echo "SSH back to $actual"
 sudo service drbd start
+numLines=20
+timeToSleep=5
+echo "Lines: $numLines + TTS: $timeToSleep"
 #exit
 # SSH into node1 and authorize public keys
 sshpass -p "vagrant" ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -t -t vagrant@node1 <<EOF
 echo "SSH into node1"
 sudo drbdadm -- --overwrite-data-of-peer primary pg
+until tail -n $numLines /proc/drbd | grep -q "UpToDate/UpToDate"; do 
+  echo -ne 'synchronizing. \r'
+  sleep $timeToSleep
+  echo -ne 'synchronizing.. \r'
+  sleep $timeToSleep
+  echo -ne 'synchronizing... \r'
+  sleep $timeToSleep
+done
+echo "DRBD sync'ed."
+sudo mkfs.xfs -f /dev/drbd0 && sudo pvcreate /dev/drbd0 && sudo vgcreate VG_PG /dev/drbd0 && sudo lvcreate -L 4500M -n LV_DATA VG_PG
+sudo mkfs.xfs -d agcount=8 /dev/VG_PG/LV_DATA
+sudo mkdir -p -m 0700 /db/pgdata
+exit
+EOF
+
+actual=$(hostname)
+echo "SSH back to $actual"
+sudo mkdir -p -m 0700 /db/pgdata
+sudo ln -s ../share/postgresql-common/pg_wrapper /usr/bin/pgbench
+export ais_port=5405
+export ais_mcast=226.94.1.1
+export ais_addr=`ip addr | grep "inet " | tail -n 1 | awk '{print $4}' | sed s/255/0/`
+sudo sed -i.bak "s/.*mcastaddr:.*/mcastaddr:\ $ais_mcast/g" /etc/corosync/corosync.conf
+sudo sed -i.bak "s/.*mcastport:.*/mcastport:\ $ais_port/g" /etc/corosync/corosync.conf
+sudo sed -i.bak "s/.*bindnetaddr:.*/bindnetaddr:\ $ais_addr/g" /etc/corosync/corosync.conf
+
+# SSH into node1 and authorize public keys
+sshpass -p "vagrant" ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -t -t vagrant@node1 <<EOF
+echo "SSH into node1"
+sudo mkfs.xfs -d agcount=8 /dev/VG_PG/LV_DATA
+sudo mount -t xfs -o noatime,nodiratime,attr2 /dev/VG_PG/LV_DATA /db/pgdata
+sudo chown postgres:postgres /db/pgdata
+sudo chmod 0700 /db/pgdata
+sudo pg_dropcluster 9.1 main --stop
+sudo pg_createcluster -d /db/pgdata -s /var/run/postgresql 9.1 hapg
 exit
 EOF
 actual=$(hostname)
 echo "SSH back to $actual"
+sudo rm -Rf /db/pgdata/*
+sudo update-rc.d postgresql disable
+sshpass -p "vagrant" ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -t -t vagrant@node1 <<EOF
+echo "SSH into node1"
+sudo update-rc.d postgresql disable
+sudo sed -i -e "s/#listen_addresses = 'localhost'/listen_addresses = '*'/g" /etc/postgresql/9.1/hapg/postgresql.conf
+sudo ln -s ../share/postgresql-common/pg_wrapper /usr/bin/pgbench
+sudo service postgresql start
+sudo su -c 'createdb pgbench' - postgres
+sudo su -c 'pgbench -i -s 5 pgbench' - postgres
+exit
+EOF
+
+#Sync corosync.conf
+export ais_port=5405
+export ais_mcast=226.94.1.1
+export ais_addr=`ip addr | grep "inet " | tail -n 1 | awk '{print $4}' | sed s/255/0/`
+sudo sed -i.bak "s/.*mcastaddr:.*/mcastaddr:\ $ais_mcast/g" /etc/corosync/corosync.conf
+sudo sed -i.bak "s/.*mcastport:.*/mcastport:\ $ais_port/g" /etc/corosync/corosync.conf
+sudo sed -i.bak "s/.*bindnetaddr:.*/bindnetaddr:\ $ais_addr/g" /etc/corosync/corosync.conf
+sshpass -p "vagrant" ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -t -t vagrant@node1 <<EOF
+echo "SSH into node1"
+export ais_port=5405
+export ais_mcast=226.94.1.1
+export ais_addr=`ip addr | grep "inet " | tail -n 1 | awk '{print $4}' | sed s/255/0/`
+sudo sed -i.bak "s/.*mcastaddr:.*/mcastaddr:\ $ais_mcast/g" /etc/corosync/corosync.conf
+sudo sed -i.bak "s/.*mcastport:.*/mcastport:\ $ais_port/g" /etc/corosync/corosync.conf
+sudo sed -i.bak "s/.*bindnetaddr:.*/bindnetaddr:\ $ais_addr/g" /etc/corosync/corosync.conf
+sudo sed -i 's/=no/=yes/' /etc/default/corosync
+sudo sed -i -e 's/ver:       0/ver:       1/g' /etc/corosync/corosync.conf
+cat <<-END >>/etc/corosync/service.d/pcmk
+service {
+# Load the Pacemaker Cluster Resource Manager
+name: pacemaker
+ver: 0
+}
+END
+sudo service corosync start
+exit
+EOF
+sudo sed -i 's/=no/=yes/' /etc/default/corosync
+sudo sed -i -e 's/ver:       0/ver:       1/g' /etc/corosync/corosync.conf
+cat <<-END >>/etc/corosync/service.d/pcmk
+service {
+# Load the Pacemaker Cluster Resource Manager
+name: pacemaker
+ver: 0
+}
+END
+sudo service corosync start
+sudo service pacemaker start
+sshpass -p "vagrant" ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -t -t vagrant@node1 <<EOF
+echo "SSH into node1"
+sudo service pacemaker start
+exit
+EOF
 else
  echo "nothing"
 fi
@@ -175,6 +269,7 @@ fi
 #sudo ssh-copy-id -i /vagrant/.ssh/id_rsa2.pub vagrant@node1
 
 #cat ~/.ssh/*.pub | ssh vagrant@node2 'umask 077; cat >>.ssh/authorized_keys'
+# Wait until synchronized
 
 # sudo crm configure primitive drbd_pg ocf:linbit:drbd  params drbd_resource="pg" op monitor interval="15" op start interval="0" timeout="240" op stop interval="0" timeout="120"
 # sudo crm configure ms ms_drbd_pg drbd_pg meta master-max="1" master-node-max="1" clone-max="2" clone-node-max="1" notify="true"
